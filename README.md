@@ -14,7 +14,7 @@ Laravel API Builder is a reusable Laravel 12 package for creating REST endpoints
 Install the package:
 
 ```bash
-composer require api-build-s/api-builder-laravel
+composer require hexcj/api-builder-laravel
 ```
 
 For local path development:
@@ -25,7 +25,7 @@ For local path development:
     { "type": "path", "url": "packages/laravel-api-builder" }
   ],
   "require": {
-    "api-build-s/api-builder-laravel": "*"
+    "hexcj/api-builder-laravel": "*"
   }
 }
 ```

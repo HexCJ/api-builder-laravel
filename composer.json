@@ -1,5 +1,5 @@
 {
-    "name": "api-build-s/api-builder-laravel",
+    "name": "hexcj/api-builder-laravel",
     "description": "A dynamic Laravel API endpoint builder driven by database configuration.",
     "type": "library",
     "license": "MIT",
