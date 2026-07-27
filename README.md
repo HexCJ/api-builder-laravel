@@ -1,11 +1,11 @@
 # Laravel API Builder
 
-Laravel API Builder is a reusable Laravel 12 package for creating REST endpoints from administrator-defined database configuration. It stores endpoint definitions in the database and builds runtime queries with Laravel Query Builder.
+Laravel API Builder is a reusable Laravel 10 package for creating REST endpoints from administrator-defined database configuration. It stores endpoint definitions in the database and builds runtime queries with Laravel Query Builder.
 
 ## Requirements
 
-- PHP 8.3+
-- Laravel 12
+- PHP 8.1-8.3
+- Laravel 10
 - Database driver supported by Laravel Schema and Query Builder
 - `doctrine/dbal` for richer schema metadata
 
