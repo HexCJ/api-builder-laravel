@@ -60,7 +60,7 @@ class EndpointController extends Controller
     {
         $payload = $request->validated();
         $payload['auth_required'] = $request->boolean('auth_required');
-        $payload['active'] = $request->boolean('active', true);
+        $payload['active'] = $request->has('active') ? $request->boolean('active') : true;
         $payload['configuration'] = $request->input('configuration', []);
 
         if (is_string($payload['configuration'])) {
