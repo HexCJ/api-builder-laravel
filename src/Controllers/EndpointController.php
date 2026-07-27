@@ -24,11 +24,22 @@ class EndpointController extends Controller
     ) {
     }
 
-    public function index(): View
+    public function index(Request $request): View
     {
+        $editingEndpoint = $request->filled('edit')
+            ? ApiEndpoint::query()->find($request->integer('edit'))
+            : null;
+
         return view('api-builder::index', [
             'endpoints' => ApiEndpoint::query()->latest()->paginate(20),
             'tables' => $this->metadata->tables(),
+            'editingEndpoint' => $editingEndpoint,
+            'editingEndpointPayload' => $editingEndpoint ? [
+                'id' => $editingEndpoint->id,
+                'table_name' => $editingEndpoint->table_name,
+                'configuration' => $editingEndpoint->configuration ?? [],
+            ] : null,
+            'initialConfiguration' => $editingEndpoint?->configuration ?? [],
         ]);
     }
 

@@ -53,19 +53,7 @@
             align-items: center;
             gap: 16px;
         }
-        .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
-        .brand-mark {
-            width: 38px;
-            height: 38px;
-            display: grid;
-            place-items: center;
-            border-radius: 8px;
-            background: #111827;
-            color: #fff;
-            font-weight: 800;
-            letter-spacing: .02em;
-            box-shadow: 0 10px 24px rgba(17, 24, 39, .18);
-        }
+        .brand { display: flex; align-items: center; min-width: 0; }
         h1 { font-size: 19px; line-height: 1.15; margin: 0; font-weight: 750; letter-spacing: 0; }
         .subtitle { margin: 3px 0 0; color: var(--muted); font-size: 13px; }
         .top-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
@@ -234,7 +222,113 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+        .column-picker { display: grid; gap: 8px; }
+        .column-picker-box {
+            min-height: 46px;
+            border: 1px solid var(--line-strong);
+            border-radius: 7px;
+            background: #fff;
+            padding: 7px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            flex-wrap: wrap;
+            transition: border-color .16s ease, box-shadow .16s ease;
+        }
+        .column-picker-box:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, .12);
+        }
+        .column-chip {
+            min-height: 28px;
+            max-width: 100%;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid #bfdbfe;
+            border-radius: 6px;
+            background: var(--primary-soft);
+            color: #1d4ed8;
+            padding: 4px 7px;
+            font-size: 12px;
+            font-weight: 750;
+        }
+        .column-chip span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 210px;
+        }
+        .column-chip button {
+            min-height: 20px;
+            width: 20px;
+            padding: 0;
+            border-radius: 5px;
+            background: #fff;
+            border-color: #bfdbfe;
+            color: #1d4ed8;
+            box-shadow: none;
+        }
+        .column-chip button:hover { background: #dbeafe; box-shadow: none; color: #1d4ed8; }
+        .column-search {
+            min-width: 150px;
+            flex: 1 1 180px;
+            border: 0;
+            padding: 6px 4px;
+            box-shadow: none;
+        }
+        .column-search:focus { box-shadow: none; border-color: transparent; }
+        .column-dropdown {
+            max-height: 220px;
+            overflow: auto;
+            border: 1px solid var(--line-strong);
+            border-radius: 7px;
+            background: #fff;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8);
+            padding: 6px;
+            display: none;
+        }
+        .column-dropdown.open { display: grid; gap: 4px; }
+        .column-option-button {
+            width: 100%;
+            min-height: 36px;
+            justify-content: flex-start;
+            background: #fff;
+            border-color: transparent;
+            color: var(--text);
+            box-shadow: none;
+            font-weight: 650;
+            padding: 8px 9px;
+        }
+        .column-option-button:hover {
+            background: var(--surface-soft);
+            border-color: var(--line);
+            color: var(--text);
+            box-shadow: none;
+        }
+        .column-option-button:disabled {
+            color: var(--muted);
+            cursor: default;
+        }
+        .column-option-button:disabled:hover {
+            background: #fff;
+            border-color: transparent;
+        }
+        .column-picker-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .column-picker-actions button { min-height: 32px; padding: 6px 10px; }
         .toolbar { display: flex; gap: 9px; flex-wrap: wrap; justify-content: flex-end; }
+        .toolbar .cancel-link {
+            min-height: 38px;
+            border: 1px solid var(--line-strong);
+            background: #fff;
+            color: #273449;
+            border-radius: 7px;
+            padding: 9px 13px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 750;
+        }
         .builder-card {
             border: 1px solid var(--line);
             border-radius: 8px;
@@ -386,7 +480,6 @@
 <header>
     <div class="topbar">
         <div class="brand">
-            <div class="brand-mark">API</div>
             <div>
                 <h1>Laravel API Builder</h1>
                 <p class="subtitle">Dynamic endpoint management</p>
@@ -400,11 +493,14 @@
 <main>
     <section>
         <div class="panel-title">
-            Create Endpoint
+            {{ $editingEndpoint ? 'Edit Endpoint' : 'Create Endpoint' }}
             <span>{{ count($tables) }} tables</span>
         </div>
-        <form method="post" action="{{ route('api-builder.store') }}" id="endpoint-form">
+        <form method="post" action="{{ $editingEndpoint ? route('api-builder.update', $editingEndpoint) : route('api-builder.store') }}" id="endpoint-form">
             @csrf
+            @if ($editingEndpoint)
+                @method('PUT')
+            @endif
             @if (session('status'))
                 <p class="status">{{ session('status') }}</p>
             @endif
@@ -413,17 +509,17 @@
             @endif
 
             <label>Name
-                <input name="name" required value="{{ old('name') }}" placeholder="Users list">
+                <input name="name" required value="{{ old('name', $editingEndpoint?->name) }}" placeholder="Users list">
             </label>
 
             <div class="row">
                 <label>Path
-                    <input name="path" required value="{{ old('path') }}" placeholder="users">
+                    <input name="path" required value="{{ old('path', $editingEndpoint?->path) }}" placeholder="users">
                 </label>
                 <label>Method
                     <select name="method">
                         @foreach (['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as $method)
-                            <option value="{{ $method }}">{{ $method }}</option>
+                            <option value="{{ $method }}" @selected(old('method', $editingEndpoint?->method ?? 'GET') === $method)>{{ $method }}</option>
                         @endforeach
                     </select>
                 </label>
@@ -433,14 +529,21 @@
                 <select name="table_name" id="table-select" required>
                     <option value="">Select table</option>
                     @foreach ($tables as $table)
-                        <option value="{{ $table }}">{{ $table }}</option>
+                        <option value="{{ $table }}" @selected(old('table_name', $editingEndpoint?->table_name) === $table)>{{ $table }}</option>
                     @endforeach
                 </select>
             </label>
 
             <label>Columns
-                <div class="columns" id="column-list">
-                    <span class="muted">Select a table</span>
+                <div class="column-picker" id="column-picker">
+                    <div class="column-picker-box" id="selected-columns">
+                        <input class="column-search" id="column-search" type="search" placeholder="Select a table first" autocomplete="off">
+                    </div>
+                    <div class="column-dropdown" id="column-dropdown"></div>
+                    <div class="column-picker-actions">
+                        <button type="button" class="secondary" id="select-all-columns">Select all</button>
+                        <button type="button" class="secondary" id="clear-columns">Clear</button>
+                    </div>
                 </div>
             </label>
 
@@ -502,11 +605,11 @@
 
             <div class="checks">
                 <label><input id="distinct" type="checkbox"> DISTINCT</label>
-                <label><input name="auth_required" type="checkbox" value="1"> Auth Required</label>
+                <label><input name="auth_required" type="checkbox" value="1" @checked(old('auth_required', $editingEndpoint?->auth_required ?? false))> Auth Required</label>
                 <div class="switch-card">
                     <label>
                         <input type="hidden" name="active" value="0">
-                        <input name="active" type="checkbox" value="1" checked>
+                        <input name="active" type="checkbox" value="1" @checked(old('active', $editingEndpoint?->active ?? true))>
                         <span>
                             <span class="switch-title">API Enabled</span>
                             <span class="switch-note">Turn off to disable this endpoint.</span>
@@ -522,13 +625,16 @@
                 <p class="hint">This maps to a RAW where expression and only works when raw expressions are enabled in config.</p>
 
                 <label>Advanced Configuration JSON
-                    <textarea name="configuration" id="configuration-json">{{ old('configuration') }}</textarea>
+                    <textarea name="configuration" id="configuration-json">{{ old('configuration', $editingEndpoint ? json_encode($editingEndpoint->configuration, JSON_PRETTY_PRINT) : '') }}</textarea>
                 </label>
             </div>
 
             <div class="toolbar">
+                @if ($editingEndpoint)
+                    <a class="cancel-link" href="{{ route('api-builder.index') }}">Cancel</a>
+                @endif
                 <button type="button" class="secondary" id="sync-config">Sync Configuration</button>
-                <button type="submit">Save</button>
+                <button type="submit">{{ $editingEndpoint ? 'Update' : 'Save' }}</button>
             </div>
         </form>
     </section>
@@ -565,6 +671,7 @@
                         </td>
                         <td>
                             <div class="actions">
+                                <a class="button-link secondary" href="{{ route('api-builder.index', ['edit' => $endpoint->id]) }}">Edit</a>
                                 <form class="delete-form" method="post" action="{{ route('api-builder.update', $endpoint) }}">
                                     @csrf
                                     @method('PUT')
@@ -598,8 +705,12 @@
 
 <script>
 const tables = @json($tables);
+const initialConfiguration = @json($initialConfiguration);
+const editingEndpoint = @json($editingEndpointPayload);
 const configInput = document.getElementById('configuration-json');
-const columnList = document.getElementById('column-list');
+const selectedColumns = document.getElementById('selected-columns');
+const columnSearch = document.getElementById('column-search');
+const columnDropdown = document.getElementById('column-dropdown');
 const tableSelect = document.getElementById('table-select');
 const joinBuilder = document.getElementById('join-builder');
 const whereBuilder = document.getElementById('where-builder');
@@ -609,6 +720,7 @@ const rawExpression = document.getElementById('raw-expression');
 const metadataCache = {};
 let baseTable = '';
 let baseColumns = [];
+let selectedColumnValues = [];
 
 const tableOptions = (selected = '') => [
     '<option value="">Table</option>',
@@ -665,13 +777,99 @@ function ensureBuilderReady(container) {
     if (hint) hint.remove();
 }
 
+function setColumnPlaceholder(text) {
+    columnSearch.placeholder = text;
+}
+
+function renderSelectedColumns() {
+    selectedColumns.querySelectorAll('.column-chip').forEach((chip) => chip.remove());
+    selectedColumnValues.forEach((column) => {
+        const chip = document.createElement('span');
+        chip.className = 'column-chip';
+        chip.innerHTML = `<span>${column}</span><button type="button" aria-label="Remove ${column}">x</button>`;
+        chip.querySelector('button').addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            selectedColumnValues = selectedColumnValues.filter((value) => value !== column);
+            renderSelectedColumns();
+            renderColumnDropdown();
+            syncConfiguration();
+        });
+        selectedColumns.insertBefore(chip, columnSearch);
+    });
+    setColumnPlaceholder(baseTable ? 'Search columns' : 'Select a table first');
+}
+
+function renderColumnDropdown() {
+    const query = columnSearch.value.trim().toLowerCase();
+    const available = baseColumns
+        .filter((column) => !selectedColumnValues.includes(column.name))
+        .filter((column) => column.name.toLowerCase().includes(query));
+
+    if (!baseTable) {
+        columnDropdown.innerHTML = '<button type="button" class="column-option-button" disabled>Select a table first</button>';
+        return;
+    }
+
+    if (available.length === 0) {
+        columnDropdown.innerHTML = '<button type="button" class="column-option-button" disabled>No columns found</button>';
+        return;
+    }
+
+    columnDropdown.innerHTML = '';
+    available.forEach((column) => {
+        const option = document.createElement('button');
+        option.type = 'button';
+        option.className = 'column-option-button';
+        option.textContent = column.name;
+        option.title = column.type || '';
+        option.addEventListener('pointerdown', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!selectedColumnValues.includes(column.name)) {
+                selectedColumnValues = [...selectedColumnValues, column.name];
+            }
+            columnSearch.value = '';
+            renderSelectedColumns();
+            renderColumnDropdown();
+            columnDropdown.classList.add('open');
+            columnSearch.focus();
+            syncConfiguration();
+        });
+        columnDropdown.appendChild(option);
+    });
+}
+
+function openColumnDropdown() {
+    renderColumnDropdown();
+    columnDropdown.classList.add('open');
+}
+
+function closeColumnDropdown() {
+    window.setTimeout(() => columnDropdown.classList.remove('open'), 120);
+}
+
+document.getElementById('column-picker').addEventListener('pointerdown', (event) => {
+    event.stopPropagation();
+});
+
+document.addEventListener('pointerdown', () => {
+    columnDropdown.classList.remove('open');
+});
+
 tableSelect.addEventListener('change', async (event) => {
-    const table = event.target.value;
+    await loadTable(event.target.value);
+});
+
+async function loadTable(table, selectedColumns = null) {
     baseTable = table;
     baseColumns = [];
-    columnList.innerHTML = '<span class="muted">Loading</span>';
+    selectedColumnValues = [];
+    setColumnPlaceholder('Loading');
+    renderSelectedColumns();
     if (!table) {
-        columnList.innerHTML = '<span class="muted">Select a table</span>';
+        setColumnPlaceholder('Select a table first');
+        renderColumnDropdown();
         clearBuilder(joinBuilder, 'Select a base table first, then add joins using table and column dropdowns.');
         clearBuilder(whereBuilder, 'Filters use selectable columns from the base table and joined tables.');
         clearBuilder(groupBuilder, 'Group using selected table columns.');
@@ -681,39 +879,38 @@ tableSelect.addEventListener('change', async (event) => {
     }
     const metadata = await fetchMetadata(table);
     baseColumns = normalizeColumns('', metadata.columns);
-    columnList.innerHTML = metadata.columns.map((column) => `
-        <label title="${column.type_name || column.type || ''}">
-            <input type="checkbox" class="column-option" value="${column.name}" checked>
-            <span>${column.name}</span>
-        </label>
-    `).join('');
+    const selected = (selectedColumns ?? metadata.columns.map((column) => column.name))
+        .map((column) => String(column).includes('.') ? String(column).split('.').pop() : column);
+    selectedColumnValues = selected.filter((column) => baseColumns.some((available) => available.name === column));
+    renderSelectedColumns();
+    renderColumnDropdown();
     updateColumnSelects();
     syncConfiguration();
-});
+}
 
 document.getElementById('add-join').addEventListener('click', () => addJoinRow());
 document.getElementById('add-where').addEventListener('click', () => addWhereRow());
 document.getElementById('add-group').addEventListener('click', () => addGroupRow());
 document.getElementById('add-order').addEventListener('click', () => addOrderRow());
 
-function addJoinRow() {
+async function addJoinRow(join = {}) {
     ensureBuilderReady(joinBuilder);
     const row = document.createElement('div');
     row.className = 'builder-row join-row';
     row.innerHTML = `
         <label>Type
             <select class="join-type">
-                <option value="inner">INNER</option>
-                <option value="left">LEFT</option>
-                <option value="right">RIGHT</option>
-                <option value="cross">CROSS</option>
+                <option value="inner" ${join.type === 'inner' ? 'selected' : ''}>INNER</option>
+                <option value="left" ${join.type === 'left' ? 'selected' : ''}>LEFT</option>
+                <option value="right" ${join.type === 'right' ? 'selected' : ''}>RIGHT</option>
+                <option value="cross" ${join.type === 'cross' ? 'selected' : ''}>CROSS</option>
             </select>
         </label>
         <label>Join Table
-            <select class="join-table">${tableOptions()}</select>
+            <select class="join-table">${tableOptions(join.table || '')}</select>
         </label>
         <label>Base Column
-            <select class="join-first">${columnOptions(baseColumns, '', 'Base column')}</select>
+            <select class="join-first">${columnOptions(baseTable ? normalizeColumns(baseTable, metadataCache[baseTable]?.columns || []) : baseColumns, join.first || '', 'Base column')}</select>
         </label>
         <label>Join Column
             <select class="join-second"><option value="">Join column</option></select>
@@ -721,10 +918,17 @@ function addJoinRow() {
         <button type="button" class="mini-button remove-row">x</button>
     `;
     joinBuilder.appendChild(row);
+    const loadJoinColumns = async (table, selected = '') => {
+        if (!table) {
+            row.querySelector('.join-second').innerHTML = '<option value="">Join column</option>';
+            return;
+        }
+        const metadata = await fetchMetadata(table);
+        row.querySelector('.join-second').innerHTML = columnOptions(normalizeColumns(table, metadata.columns), selected, 'Join column');
+    };
     row.querySelector('.join-table').addEventListener('change', async (event) => {
         const table = event.target.value;
-        const metadata = await fetchMetadata(table);
-        row.querySelector('.join-second').innerHTML = columnOptions(normalizeColumns(table, metadata.columns), '', 'Join column');
+        await loadJoinColumns(table);
         updateColumnSelects();
         syncConfiguration();
     });
@@ -734,28 +938,33 @@ function addJoinRow() {
         syncConfiguration();
     });
     row.addEventListener('change', syncConfiguration);
+    await loadJoinColumns(join.table || '', join.second || '');
+    updateColumnSelects();
+    syncConfiguration();
 }
 
-function addWhereRow() {
+function addWhereRow(condition = {}) {
     ensureBuilderReady(whereBuilder);
+    const operator = condition.operator || '=';
+    const value = Array.isArray(condition.value) ? condition.value.join(', ') : (condition.value ?? '');
     const row = document.createElement('div');
     row.className = 'builder-row where-row';
     row.innerHTML = `
         <label>Column
-            <select class="where-column">${columnOptions(currentSelectableColumns())}</select>
+            <select class="where-column">${columnOptions(currentSelectableColumns(), condition.column || '')}</select>
         </label>
         <label>Operator
             <select class="where-operator">
-                ${['=', '!=', '<', '>', '<=', '>=', 'LIKE', 'NOT LIKE', 'BETWEEN', 'NOT BETWEEN', 'NULL', 'NOT NULL', 'IN', 'NOT IN'].map((operator) => `<option value="${operator}">${operator}</option>`).join('')}
+                ${['=', '!=', '<', '>', '<=', '>=', 'LIKE', 'NOT LIKE', 'BETWEEN', 'NOT BETWEEN', 'NULL', 'NOT NULL', 'IN', 'NOT IN'].map((item) => `<option value="${item}" ${item === operator ? 'selected' : ''}>${item}</option>`).join('')}
             </select>
         </label>
         <label>Value
-            <input class="where-value" placeholder="value">
+            <input class="where-value" placeholder="value" value="${value}">
         </label>
         <label>Boolean
             <select class="where-boolean">
-                <option value="and">AND</option>
-                <option value="or">OR</option>
+                <option value="and" ${(condition.boolean || 'and') === 'and' ? 'selected' : ''}>AND</option>
+                <option value="or" ${condition.boolean === 'or' ? 'selected' : ''}>OR</option>
             </select>
         </label>
         <button type="button" class="mini-button remove-row">x</button>
@@ -769,13 +978,13 @@ function addWhereRow() {
     row.addEventListener('change', syncConfiguration);
 }
 
-function addGroupRow() {
+function addGroupRow(column = '') {
     ensureBuilderReady(groupBuilder);
     const row = document.createElement('div');
     row.className = 'builder-row group-row';
     row.innerHTML = `
         <label>Column
-            <select class="group-column">${columnOptions(currentSelectableColumns())}</select>
+            <select class="group-column">${columnOptions(currentSelectableColumns(), column)}</select>
         </label>
         <button type="button" class="mini-button remove-row">x</button>
     `;
@@ -787,18 +996,18 @@ function addGroupRow() {
     row.addEventListener('change', syncConfiguration);
 }
 
-function addOrderRow() {
+function addOrderRow(order = {}) {
     ensureBuilderReady(orderBuilder);
     const row = document.createElement('div');
     row.className = 'builder-row order-row';
     row.innerHTML = `
         <label>Column
-            <select class="order-column">${columnOptions(currentSelectableColumns())}</select>
+            <select class="order-column">${columnOptions(currentSelectableColumns(), order.column || '')}</select>
         </label>
         <label>Direction
             <select class="order-direction">
-                <option value="asc">ASC</option>
-                <option value="desc">DESC</option>
+                <option value="asc" ${(order.direction || 'asc') === 'asc' ? 'selected' : ''}>ASC</option>
+                <option value="desc" ${order.direction === 'desc' ? 'selected' : ''}>DESC</option>
             </select>
         </label>
         <button type="button" class="mini-button remove-row">x</button>
@@ -892,9 +1101,10 @@ function collectOrderBy() {
 }
 
 function syncConfiguration() {
-    const columns = Array.from(document.querySelectorAll('.column-option:checked')).map((input) => input.value);
+    const columns = selectedColumnValues;
     const paginationType = document.getElementById('pagination-type').value;
     const config = {
+        ...initialConfiguration,
         columns,
         joins: collectJoins(),
         where: collectWhere(),
@@ -916,8 +1126,84 @@ function syncConfiguration() {
 
 document.getElementById('sync-config').addEventListener('click', syncConfiguration);
 document.getElementById('endpoint-form').addEventListener('submit', syncConfiguration);
-columnList.addEventListener('change', syncConfiguration);
+columnSearch.addEventListener('focus', openColumnDropdown);
+columnSearch.addEventListener('input', openColumnDropdown);
+columnSearch.addEventListener('blur', closeColumnDropdown);
+selectedColumns.addEventListener('click', () => columnSearch.focus());
+document.getElementById('select-all-columns').addEventListener('click', () => {
+    selectedColumnValues = baseColumns.map((column) => column.name);
+    renderSelectedColumns();
+    renderColumnDropdown();
+    syncConfiguration();
+});
+document.getElementById('clear-columns').addEventListener('click', () => {
+    selectedColumnValues = [];
+    renderSelectedColumns();
+    renderColumnDropdown();
+    syncConfiguration();
+});
 rawExpression.addEventListener('input', syncConfiguration);
+
+async function preloadEditingEndpoint() {
+    if (!editingEndpoint) {
+        if (tableSelect.value) {
+            await loadTable(tableSelect.value);
+        }
+        return;
+    }
+
+    const config = editingEndpoint.configuration || {};
+    await loadTable(editingEndpoint.table_name, config.columns || []);
+
+    clearBuilder(joinBuilder, 'Select a base table first, then add joins using table and column dropdowns.');
+    for (const join of config.joins || []) {
+        await addJoinRow(join);
+    }
+    if ((config.joins || []).length === 0) {
+        clearBuilder(joinBuilder, 'Select a base table first, then add joins using table and column dropdowns.');
+    }
+
+    updateColumnSelects();
+
+    clearBuilder(whereBuilder, 'Filters use selectable columns from the base table and joined tables.');
+    for (const condition of config.where || []) {
+        if (condition.operator === 'RAW') {
+            rawExpression.value = condition.expression || '';
+            continue;
+        }
+        if (!condition.nested && condition.column) {
+            addWhereRow(condition);
+        }
+    }
+    if ((config.where || []).filter((condition) => condition.operator !== 'RAW').length === 0) {
+        clearBuilder(whereBuilder, 'Filters use selectable columns from the base table and joined tables.');
+    }
+
+    clearBuilder(groupBuilder, 'Group using selected table columns.');
+    for (const column of config.group_by || []) {
+        addGroupRow(column);
+    }
+    if ((config.group_by || []).length === 0) {
+        clearBuilder(groupBuilder, 'Group using selected table columns.');
+    }
+
+    clearBuilder(orderBuilder, 'Sort using one or more columns.');
+    for (const order of config.order_by || []) {
+        addOrderRow(order);
+    }
+    if ((config.order_by || []).length === 0) {
+        clearBuilder(orderBuilder, 'Sort using one or more columns.');
+    }
+
+    document.getElementById('distinct').checked = Boolean(config.distinct);
+    if (config.pagination?.enabled) {
+        document.getElementById('pagination-type').value = config.pagination.type || 'paginate';
+        document.getElementById('per-page').value = config.pagination.per_page || 50;
+    }
+    syncConfiguration();
+}
+
+preloadEditingEndpoint();
 </script>
 </body>
 </html>
